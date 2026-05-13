@@ -207,10 +207,7 @@ export class LmStudioService implements ModelBackend, OnDestroy {
   async *generateTextStream(tool_list: string, context: string, prompt: string): AsyncGenerator<string> {
     this.lastTool = tool_list;
 
-    let userMessage = prompt;
-    if (context) {
-        userMessage = `Context: ${context}\nUser: ${prompt}`;
-    }
+    let userMessage = context ? `Context: ${context}\n${prompt?'User: '+prompt:''}` : prompt;
 
     this.history.push({ role: 'user', content: userMessage });
 

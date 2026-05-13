@@ -187,7 +187,7 @@ Think what will be the next step.`;
           
               context += `The player is interacting with you. 
 Nearby Build Interaction HTML: ${this.currentBuildInteraction.html}.
-Judge the result and use provided tool if it matches your goal.`;
+Judge the result and use provided tool if it matches your goal. Do NOT write it by yourself.`;
           } else {
               context += `Original script says: "${data.chatResponse}"
 Respond to the player in character. Keep it brief (1-2 sentences).`;
