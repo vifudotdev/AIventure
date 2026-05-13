@@ -1,0 +1,39 @@
+<!--
+Copyright 2026 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<div class="chat-input-overlay" *ngIf="isVisible" [ngClass]="{'ai-mode': isAiMode, 'processing': isProcessing}">
+    <div class="input-container">
+        <textarea 
+            #chatInput
+            [(ngModel)]="message" 
+            placeholder="Type your message..."
+            [readonly]="isProcessing"
+            (keydown.enter)="sendMessage(); $event.stopPropagation(); $event.preventDefault()"
+            (keydown.space)="$event.stopPropagation()"
+        ></textarea>
+        <div class="spinner-overlay" *ngIf="isProcessing">
+            <div class="spinner"></div>
+        </div>
+        <!-- stopPropagation on enter to prevent the window listener from immediately triggering again if it bubbles up? 
+             Actually the window listener is on window, so bubbling matters. 
+             But we handle sending in the window listener logic or here?
+             The window listener handles the 'Enter' to OPEN.
+             If we are focused in the input, 'Enter' should SEND.
+             The window listener checks `isVisible`. If true, it calls `sendMessage`.
+             So we don't need a specific handler here, but we should ensure the event doesn't do anything weird.
+        -->
+    </div>
+</div>

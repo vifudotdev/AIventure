@@ -1,0 +1,459 @@
+/**
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.right-panel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #000;
+  border-left: 2px solid #0055ff;
+}
+
+.right-panel-header {
+  /* border-bottom: 2px solid #0055ff; */
+  background-color: #000;
+}
+
+.header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  background-color: #000;
+  border-bottom: 2px solid #0055ff;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5em;
+  color: #fff;
+  text-shadow: 2px 2px 0px #002288;
+  transition: color 0.3s ease;
+}
+
+.header h1:hover {
+  background: linear-gradient(
+    to right,
+    #ff007f,
+    #ff00ff,
+    #7f00ff,
+    #0000ff,
+    #00ffff,
+    #00ff00,
+    #ffff00,
+    #ff7f00,
+    #ff0000
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
+  animation: rainbow-scroll 3s linear infinite;
+  text-shadow: none;
+  cursor: default;
+}
+
+.header h1 .venture {
+  color: #bbb;
+  transition: color 0.3s ease;
+}
+
+.header h1:hover .venture {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes rainbow-scroll {
+  from { background-position: 0% center; }
+  to { background-position: 200% center; }
+}
+
+.title-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.collectible-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.collectibles-tracker {
+  display: flex;
+  flex-direction: row;
+  gap: 15px;
+  padding: 15px;
+  background-color: #000;
+  justify-content: center;
+  border-bottom: 2px solid #0055ff;
+}
+
+.collectible-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.box-title {
+  color: #fff;
+  font-size: 0.7em;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-family: monospace;
+}
+
+.box-content {
+  border: 3px solid #0055ff;
+  background-color: #111;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 80px;
+  justify-content: center;
+  box-shadow: inset 0 0 5px #0055ff;
+}
+
+.icon {
+  font-size: 1.2em;
+}
+
+.cross {
+  color: #fff;
+  font-size: 0.8em;
+  font-family: monospace;
+}
+
+.count {
+  color: #fff;
+  font-size: 1.2em;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.max {
+  color: #888;
+  font-size: 1.2em;
+  font-family: monospace;
+}
+
+.tabs {
+  display: flex;
+  background-color: #000;
+  border-bottom: 2px solid #0055ff;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 15px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s;
+  color: #fff;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.7em;
+}
+
+.tab-button:hover {
+  background-color: #0033aa;
+}
+
+.tab-button.active {
+  background-color: #002266;
+  border-bottom: 3px solid #0055ff;
+  color: #fff;
+  text-shadow: 0 0 5px #0055ff;
+}
+
+.icon {
+  font-style: normal;
+  width: 24px;
+  height: 24px;
+  filter: invert(100%);
+  /* White icons for Zelda vibe */
+}
+
+.tab-button.active .icon {
+  filter: invert(100%) drop-shadow(0 0 2px #0055ff);
+}
+
+.tab-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background-color: #000;
+  color: #fff;
+}
+
+.content-pane {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+h2 {
+  margin-top: 0;
+  color: #fff;
+  text-shadow: 2px 2px 0px #002288;
+}
+
+.logs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.log-entry {
+  padding: 5px;
+  border-bottom: 1px solid #111;
+  word-break: break-word;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #fff;
+}
+
+/* Code Editor Styles */
+.code-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.code-editor-container {
+  flex: 1;
+  border: 1px solid #0055ff;
+  border-radius: 0;
+}
+
+.code-editor {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 10px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 12px;
+  resize: none;
+  background-color: #000;
+  color: #fff;
+  outline: none;
+}
+
+.code-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+button {
+  padding: 8px 16px;
+  background-color: #000;
+  color: #fff;
+  border: 1px solid #0055ff;
+  border-radius: 0;
+  cursor: pointer;
+  font-family: "Press Start 2P", monospace;
+  font-size: 0.8em;
+}
+
+button:disabled {
+  background-color: #111;
+  color: #555;
+  border-color: #555;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  box-shadow: 0 0 5px #0055ff;
+}
+
+.execution-result {
+  font-family: inherit;
+  font-weight: normal;
+  color: #fff;
+}
+
+.hint {
+  font-style: normal;
+  color: #888;
+  font-size: 0.8em;
+  margin-top: 5px;
+}
+
+/* iFrame Pane Styles */
+.iframe-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.iframe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sub-tabs {
+  display: flex;
+  gap: 5px;
+}
+
+.sub-tab-button {
+  padding: 5px 10px;
+  background-color: #000;
+  color: #fff;
+  border: 1px solid #0055ff;
+  font-size: 0.8em;
+  border-radius: 0;
+}
+
+.sub-tab-button:hover:not(:disabled) {
+  background-color: #111;
+  box-shadow: 0 0 5px #0055ff;
+}
+
+.sub-tab-button.active {
+  background-color: #0055ff;
+  color: #fff;
+  border-color: #0055ff;
+}
+
+.iframe-container {
+  flex: 1;
+  border: 1px solid #0055ff;
+  border-radius: 0;
+  background-color: #fff;
+  overflow: hidden;
+}
+
+.iframe-code-container {
+  flex: 1;
+  border: 1px solid #0055ff;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.iframe-code {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  resize: none;
+  background-color: #000;
+  color: #fff;
+  outline: none;
+}
+
+.result-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  /* Remove inline spacing */
+}
+
+.iframe-controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.instruction {
+  color: #32cd32;
+  margin-bottom: 5px;
+}
+
+.bottom-controls {
+  padding: 15px;
+  background-color: #000;
+  border-top: 2px solid #0055ff;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.credits-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.credits-modal {
+  background-color: #000;
+  border: 4px solid #0055ff;
+  padding: 30px;
+  width: 80%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 0 15px #0055ff;
+  font-family: "Press Start 2P", monospace;
+  color: #fff;
+}
+
+.credits-modal h2 {
+  text-align: center;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 0px #002288;
+}
+
+.credits-modal p {
+  font-size: 0.8em;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.credits-modal button {
+  align-self: center;
+  margin-top: 10px;
+}
+
+.rainbow-glow {
+  background-image: linear-gradient(
+    to right,
+    #ff0055,
+    #ffaa00,
+    #aaff00,
+    #00ffaa,
+    #00aaff,
+    #aa00ff,
+    #ff0055
+  ) !important;
+  background-size: 200% auto !important;
+  animation: shift 3s linear infinite !important;
+  color: #ffffff !important;
+  text-shadow: 1px 1px 0 #000000 !important;
+  border: 1px solid #ffffff !important;
+  box-shadow: 0 0 10px #ffffff !important;
+}

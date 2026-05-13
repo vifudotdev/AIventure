@@ -1,0 +1,39 @@
+<!--
+Copyright 2026 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<div class="chat-container">
+  <div class="header">
+    <h1>AIventure</h1>
+  </div>
+
+  <div class="collectibles-tracker">
+    <div *ngFor="let collectible of collectiblesTracker | keyvalue" class="collectible-box">
+      <div class="box-title">{{ collectible.key }}</div>
+      <div class="box-content">
+        <span class="icon">{{ collectible.key.toLowerCase().includes('diamond') ? '💎' : (collectible.key.toLowerCase().includes('star') ? '⭐' : '🔑') }}</span>
+        <span class="cross">x</span>
+        <span class="count">{{ collectible.value.count }}</span>
+        <span class="max">/ {{ collectible.value.max }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div *ngFor="let message of messages" class="message">
+      {{ message }}
+    </div>
+  </div>
+</div>

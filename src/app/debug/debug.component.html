@@ -1,0 +1,176 @@
+<!--
+Copyright 2026 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<div class="debug-container">
+  <h1>World Data Debugger</h1>
+
+  <div *ngIf="isLoading">Loading game data...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div *ngIf="!isLoading && !error" class="content">
+    <div class="sidebar">
+      <h2>Classes</h2>
+      <div class="tree-root">
+        <ng-container *ngFor="let node of classTree">
+          <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: node }"></ng-container>
+        </ng-container>
+      </div>
+
+      <ng-template #nodeTemplate let-node>
+        <div class="tree-node">
+          <div class="node-content" 
+               [class.selected]="node.classDef.id === selectedClassId"
+               (click)="selectClass(node.classDef.id)">
+            
+            <span class="expander" 
+                  (click)="toggleNode(node, $event)"
+                  [style.visibility]="node.children.length ? 'visible' : 'hidden'">
+              {{ node.expanded ? '▼' : '▶' }}
+            </span>
+            
+            <span class="node-name">{{ node.name }}</span>
+            <span class="node-id" title="{{ node.classDef.id }}">({{ node.classDef.id }})</span>
+            <span class="type-badge">{{ node.classDef.type }}</span>
+          </div>
+
+          <div class="children" *ngIf="node.expanded && node.children.length > 0">
+            <ng-container *ngFor="let child of node.children">
+              <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: child }"></ng-container>
+            </ng-container>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="main-panel" *ngIf="selectedClassId">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <h2>Class Inspection: {{ selectedClassId }}</h2>
+          <div class="image-preview" *ngIf="selectedClassImageUrl">
+              <img [src]="selectedClassImageUrl" alt="Class Texture">
+          </div>
+      </div>
+
+      <div class="section">
+        <h3>Inheritance Hierarchy</h3>
+        <div class="hierarchy">
+          <span *ngFor="let cls of selectedClassHierarchy; let last = last">
+            {{ cls.id }} <span *ngIf="!last"> &rarr; </span>
+          </span>
+        </div>
+      </div>
+
+      <div class="columns">
+        <div class="column">
+          <h3>Raw Config (This Class Only)</h3>
+          <pre>{{ rawConfig | json }}</pre>
+        </div>
+
+        <div class="column">
+          <h3>Resolved Properties (Inherited + Merged)</h3>
+          <pre>{{ resolvedProperties | json }}</pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Resolved Behaviours</h3>
+        <div *ngIf="resolvedBehaviours.length === 0">No behaviours.</div>
+        <div *ngFor="let b of resolvedBehaviours" class="behaviour-item">
+          <strong>{{ b.id }}</strong>
+          <pre>{{ b.config | json }}</pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Related Instances ({{ relatedInstances.length }})</h3>
+        <div *ngIf="relatedInstances.length === 0">No instances found.</div>
+        <table *ngIf="relatedInstances.length > 0" class="instance-table">
+            <thead>
+                <tr>
+                    <th>Layout</th>
+                    <th>Layer</th>
+                    <th>Instance ID</th>
+                    <th>Inherit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let inst of relatedInstances" 
+                    (click)="selectInstance(inst)"
+                    [class.selected-row]="selectedInstance?.id === inst.instance.id">
+                    <td>{{ inst.layoutId }}</td>
+                    <td>{{ inst.layerId }}</td>
+                    <td>{{ inst.instance.id }}</td>
+                    <td>{{ inst.instance.inherit }}</td>
+                </tr>
+            </tbody>
+        </table>
+      </div>
+
+      <div class="section" *ngIf="selectedInstance" style="border-top: 2px solid #555; margin-top: 20px; padding-top: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h3>Instance Details: {{ selectedInstance.id }}</h3>
+                <div style="margin-bottom: 10px; color: #aaa;">
+                Location: Layout <strong>{{ selectedInstance.layoutId }}</strong> / Layer <strong>{{ selectedInstance.layerId }}</strong>
+                </div>
+            </div>
+            <div class="image-preview" *ngIf="selectedInstance.imageUrl">
+                <img [src]="selectedInstance.imageUrl" alt="Instance Texture">
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <h3>Properties</h3>
+                <pre>{{ selectedInstance.properties | json }}</pre>
+            </div>
+             <div class="column">
+                <h3>Behaviours</h3>
+                <pre>{{ selectedInstance.behaviours | json }}</pre>
+            </div>
+        </div>
+         <div class="section" *ngIf="selectedInstance.animations.length > 0">
+            <h3>Animations</h3>
+            <div *ngFor="let anim of selectedInstance.animations" class="behaviour-item">
+                <strong>{{ anim.id }} ({{ anim.frames.length }} frames)</strong>
+                <pre>{{ anim.config | json }}</pre>
+                
+                <div class="frames-grid" *ngIf="anim.frames.length > 0">
+                    <div *ngFor="let frame of anim.frames; let i = index" class="frame-card">
+                        <div class="frame-header">
+                            <span class="frame-index">#{{ i }}</span>
+                            <span class="frame-id" *ngIf="frame.id">{{ frame.id }}</span>
+                        </div>
+                        <div class="frame-content">
+                             <div class="frame-image-wrapper" *ngIf="frame.imageUrl">
+                                 <img [src]="frame.imageUrl">
+                             </div>
+                             <div class="frame-props" *ngIf="frame.config && (frame.config | json) !== '{}'">
+                                <pre>{{ frame.config | json }}</pre>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="main-panel empty" *ngIf="!selectedClassId">
+      Select a class from the sidebar to inspect.
+    </div>
+  </div>
+</div>

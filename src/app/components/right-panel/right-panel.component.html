@@ -1,0 +1,176 @@
+<!--
+Copyright 2026 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<div class="right-panel-container">
+  <div class="right-panel-header">
+    <div class="header">
+      <img src="assets/gemini-icon.png" class="title-icon" alt="Gemini">
+      <h1>AI<span class="venture">venture</span></h1>
+      <img src="assets/gemma-icon.png" class="title-icon" alt="Gemma">
+    </div>
+    <div class="collectibles-tracker">
+      <div *ngFor="let collectible of collectiblesTracker | keyvalue" class="collectible-box">
+        <div class="box-title">{{ collectible.key }}</div>
+        <div class="box-content">
+          <ng-container [ngSwitch]="true">
+            <img *ngSwitchCase="collectible.key.toLowerCase().includes('diamond')" src="assets/diamond.png" class="collectible-img" alt="Diamond">
+            <img *ngSwitchCase="collectible.key.toLowerCase().includes('star')" src="assets/star.png" class="collectible-img" alt="Star">
+            <span *ngSwitchDefault class="icon">🔑</span>
+          </ng-container>
+          <span class="cross">x</span>
+          <span class="count">{{ collectible.value.count }}</span>
+          <span class="max">/ {{ collectible.value.max }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <!-- <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'comments'" 
+      (click)="setActiveTab('comments')"
+      title="Comments">
+      <img class="icon svg-icon" src="assets/comments.svg" alt="Comments">
+      <span>Comments</span>
+    </button> -->
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'code'" 
+      (click)="setActiveTab('code')"
+      title="Code">
+      <img class="icon svg-icon" src="assets/code.svg" alt="Code">
+      <span>Code</span>
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'iframe'" 
+      (click)="setActiveTab('iframe')"
+      title="iFrame">
+      <img class="icon svg-icon" src="assets/iframe.svg" alt="iFrame">
+      <span>iFrame</span>
+    </button>
+    <button 
+      class="tab-button" 
+      [class.active]="activeTab === 'logs'" 
+      (click)="setActiveTab('logs')"
+      title="Logs">
+      <img class="icon svg-icon" src="assets/logs.svg" alt="Logs">
+      <span>Logs</span>
+    </button>
+  </div>
+
+  <div class="tab-content">
+    <!-- <div *ngIf="activeTab === 'comments'" class="content-pane">
+      <h2>Comments</h2>
+      <p>Comments content goes here...</p>
+    </div> -->
+    <div *ngIf="activeTab === 'code'" class="content-pane code-pane">
+      <h2>Code Puzzle</h2>
+      <div class="code-editor-container">
+        <textarea 
+          #codeEditor
+          [(ngModel)]="codeContent" 
+          (ngModelChange)="onCodeChange()"
+          class="code-editor" 
+          [disabled]="!currentCodeInteraction"
+          (focus)="onEditorFocus()"
+          (blur)="onEditorBlur()"
+          (keydown)="$event.stopPropagation()"
+        ></textarea>
+      </div>
+      <div class="code-controls">
+        <button (click)="runCode()" [class.rainbow-glow]="isCodeDirty" [disabled]="!currentCodeInteraction">Run Code</button>
+        <span class="execution-result">{{ executionResult }}</span>
+      </div>
+      <p class="hint" *ngIf="currentCodeInteraction">
+        Hint: Ask Gemini to generate the code for you!
+      </p>
+    </div>
+    <div *ngIf="activeTab === 'iframe'" class="content-pane iframe-pane">
+      <div class="iframe-header">
+        <h2>Build Interaction</h2>
+        <div class="sub-tabs" *ngIf="currentBuildInteraction">
+          <button 
+            class="sub-tab-button" 
+            [class.active]="iframeSubTab === 'preview'" 
+            (click)="setIframeSubTab('preview')">
+            Preview
+          </button>
+          <button 
+            class="sub-tab-button" 
+            [class.active]="iframeSubTab === 'code'" 
+            (click)="setIframeSubTab('code')">
+            Code
+          </button>
+        </div>
+      </div>
+
+      <p *ngIf="currentBuildInteraction" class="instruction">
+        Use Chat Panel (Enter) to build!
+        <span *ngIf="isBuilding">(Building...)</span>
+      </p>
+      
+      <ng-container *ngIf="iframeSubTab === 'preview'">
+        <div class="iframe-container">
+          <iframe [srcdoc]="safeHtmlContent" class="result-frame"></iframe>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="iframeSubTab === 'code'">
+         <div class="iframe-code-container">
+            <textarea 
+              #iframeCodeEditor
+              readonly
+              class="iframe-code"
+              [value]="rawHtml"
+              (keydown)="$event.stopPropagation()"
+            ></textarea>
+         </div>
+      </ng-container>
+
+      <div class="iframe-controls" *ngIf="safeHtmlContent">
+        <button (click)="clearHtml()">Clear</button>
+      </div>
+
+      <p class="hint" *ngIf="!currentBuildInteraction">
+        Find a BUILD interaction to use this tab.
+      </p>
+    </div>
+    <div *ngIf="activeTab === 'logs'" class="content-pane">
+      <h2>Logs</h2>
+      <div class="logs-container">
+        <div *ngFor="let log of logs" class="log-entry">{{ log }}</div>
+      </div>
+    </div>
+  </div>
+<div class="bottom-controls">
+  <button (click)="openCredits()">Credits</button>
+  <button (click)="openGitHub()">Download Code</button>
+  <button (click)="restartGame()" title="Restart Game (Shift + R)">Restart</button>
+</div>
+
+<div class="credits-overlay" *ngIf="isCreditsVisible" (click)="closeCredits()">
+  <div class="credits-modal" (click)="$event.stopPropagation()">
+    <h2>Credits</h2>
+    <p>Game Design: Tom Greenaway & Juyeong Ji</p>
+    <p>Programming: Juyeong Ji & Tom Greenaway</p>
+    <p>Art: <a target="_blank" href="https://www.oryxdesignlab.com/products/p/wee-fantasy">Oryx Wee Fantasy
+        Spritepack</a> & additions by Tom Greenaway</p>
+    <button (click)="closeCredits()">Close</button>
+  </div>
+</div>
+</div>

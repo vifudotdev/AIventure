@@ -1,0 +1,125 @@
+/**
+ * Copyright 2026 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.chat-input-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 25%;
+    /* Bottom quarter */
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    /* Ensure it's on top of the canvas */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.input-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    position: relative;
+}
+
+textarea {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: clamp(12px, 2.2vh, 22px);
+    padding: 20px;
+    outline: none;
+    font-family: "Press Start 2P";
+    resize: none;
+    overflow-y: auto;
+    box-sizing: border-box;
+    line-height: 1.5;
+}
+
+/* Spinner Overlay Styles */
+.spinner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 6px solid #fff;
+    border-top: 6px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* AI Mode Styles */
+.chat-input-overlay.ai-mode textarea {
+    color: white;
+    text-shadow: 0 0 5px black;
+
+    &::placeholder {
+        color: cyan;
+        text-shadow: 0 0 5px black;
+    }
+}
+
+.chat-input-overlay.ai-mode.processing textarea {
+    color: #888;
+    text-shadow: none;
+}
+
+.chat-input-overlay.ai-mode {
+    /* We list 'red' at the start and end to ensure the loop is seamless */
+    background: linear-gradient(to right,
+            rgba(176, 0, 0, 0.9), rgba(0, 186, 0, 0.9), rgba(0, 0, 194, 0.9), rgba(192, 182, 0, 0.9), rgba(176, 0, 0, 0.9));
+
+
+    /* We make the background double the width of the container so there is room to scroll */
+    background-size: 200% 100%;
+
+    /* 'linear' ensures constant speed, 'infinite' makes it loop forever */
+    animation: rainbow-scroll 10s linear infinite;
+}
+
+/* 4. The Keyframes */
+@keyframes rainbow-scroll {
+    0% {
+        background-position: 0 0;
+    }
+
+    100% {
+        /* Moving to 200% (or -200% depending on desired direction math) 
+         shifts the background by one full iteration */
+        background-position: 200% 0;
+    }
+}
