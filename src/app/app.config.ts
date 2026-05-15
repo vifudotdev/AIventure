@@ -40,7 +40,7 @@ export const appConfig: ApplicationConfig & { overrideStartLayoutId?: string } =
     { provide: MODEL_BACKEND, useClass: LmStudioService }, // Uncomment to use LM Studio
     // { provide: MODEL_BACKEND, useClass: TransformersService }, // Uncomment to use transformers.js
     // { provide: MODEL_BACKEND, useClass: ChromePromptService }, // Uncomment to use Chrome Prompt API
-    //{ provide: MODEL_BACKEND, useClass: MediaPipeService } // Uncomment to use MediaPipe LLM Inference API
+    // { provide: MODEL_BACKEND, useClass: MediaPipeService } // Uncomment to use MediaPipe LLM Inference API
   ]
 };
 
