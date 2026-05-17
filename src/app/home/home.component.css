@@ -45,6 +45,7 @@
 .right-panel {
     flex: 1;
     min-width: 0; /* Prevent flex item from overflowing */
+    z-index: 1000;
 }
 
 /* Ensure Phaser game fills the middle panel */
