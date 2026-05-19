@@ -30,7 +30,8 @@ import { MediaPipeService } from './services/mediapipe.service';
 // [START solution_code]
 
 export const appConfig: ApplicationConfig & { overrideStartLayoutId?: string } = {
-  overrideStartLayoutId: '00000722440872553787', // Uncomment to override start layout ID
+  // overrideStartLayoutId: '00000722440872553787', // IO demo
+  overrideStartLayoutId: '00000120541412375173', // IO demo, extra trimmed
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
@@ -40,7 +41,7 @@ export const appConfig: ApplicationConfig & { overrideStartLayoutId?: string } =
     { provide: MODEL_BACKEND, useClass: LmStudioService }, // Uncomment to use LM Studio
     // { provide: MODEL_BACKEND, useClass: TransformersService }, // Uncomment to use transformers.js
     // { provide: MODEL_BACKEND, useClass: ChromePromptService }, // Uncomment to use Chrome Prompt API
-    // { provide: MODEL_BACKEND, useClass: MediaPipeService } // Uncomment to use MediaPipe LLM Inference API
+    //{ provide: MODEL_BACKEND, useClass: MediaPipeService } // Uncomment to use MediaPipe LLM Inference API
   ]
 };
 
