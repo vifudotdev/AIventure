@@ -1,0 +1,60 @@
+{
+  "manifestVersion": 1,
+  "type": "game",
+  "id": "aiventure",
+  "name": "AIventure",
+  "version": "0.1.0-vifu.1",
+  "description": "A Phaser adventure game with AI-driven NPC dialogue and puzzle actions.",
+  "tags": [
+    "ai-native",
+    "adventure",
+    "phaser",
+    "npc",
+    "puzzle"
+  ],
+  "main": {
+    "url": "index.html",
+    "type": "static-web",
+    "engine": "phaser",
+    "sdk": "auto"
+  },
+  "build": {
+    "output": "dist/template-angular/browser",
+    "command": "npm run build-nolog"
+  },
+  "ai": {
+    "dialogue": {
+      "role": "npc",
+      "tools": "game-actions"
+    },
+    "budget": {
+      "mode": "demo",
+      "turns": 8
+    },
+    "fallback": "deterministic"
+  },
+  "save": {
+    "scope": "player"
+  },
+  "data": {
+    "world": {
+      "src": "assets/gamedata/game.json",
+      "type": "json"
+    }
+  },
+  "bundle": {
+    "include": [
+      "assets/gamedata/**"
+    ]
+  },
+  "links": {
+    "source": {
+      "url": "https://github.com/vifu-labs/AIventure",
+      "label": "Source"
+    }
+  },
+  "category": "adventure",
+  "remix": {
+    "access": "owner"
+  }
+}

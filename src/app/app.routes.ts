@@ -20,5 +20,7 @@ import { HomeComponent } from './home/home.component';
 
 export const routes: Routes = [
     { path: 'debug', loadComponent: () => import('./debug/debug.component').then(m => m.DebugComponent), canMatch: [() => isDevMode()] },
-    { path: '', component: HomeComponent }
+    { path: 'index.html', component: HomeComponent },
+    { path: '', component: HomeComponent },
+    { path: '**', component: HomeComponent }
 ];

@@ -105,6 +105,29 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 npm run build
 ```
 
+## Run on Vifu
+
+This fork includes a Vifu manifest and a thin model adapter:
+
+- `manifest.json` describes the web runtime, build command, AI dialogue capability, data bundle, and source link.
+- `src/app/services/vifu-model.service.ts` implements AIventure's existing `ModelBackend` interface through `window.Vifu.services.ai`.
+- `src/main.ts` initializes `@vifu/sdk` so the game can talk to the Vifu host when embedded.
+
+Validate and build with the Vifu CLI:
+
+```bash
+vifu manifest check --dir .
+vifu build --game-dir .
+```
+
+Deploy to a Vifu API:
+
+```bash
+vifu deploy --dir .
+```
+
+Outside a Vifu host, the adapter keeps deterministic fallback behavior so the game remains runnable locally.
+
 ### Sprite pack license / credits
 
 Several sprites for this project were licensed from the Oryx Design Lab's Wee Fantasy sprite pack: https://www.oryxdesignlab.com/products/p/wee-fantasy 

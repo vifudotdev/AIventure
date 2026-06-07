@@ -15,8 +15,40 @@
  */
 
 import { bootstrapApplication } from '@angular/platform-browser';
+import {
+  COMPANION_METHODS,
+  COMPANION_PROTOCOL_VERSION,
+  COMPANION_SDK_VERSION,
+  createVifuSDK,
+  type VifuSDK
+} from '@vifu/sdk';
 import { appConfig } from './app/app.config';
 import { AppComponent } from './app/app.component';
+
+type VifuGlobal = Window & {
+  Vifu?: VifuSDK & {
+    version?: string;
+    protocolVersion?: string;
+    __receiveHostMessage?: VifuSDK['_handleEnvelope'];
+  };
+};
+
+const root = window as VifuGlobal;
+const vifu = root.Vifu?.companion
+  ? root.Vifu
+  : createVifuSDK({
+      transport: 'auto',
+      documentTitle: document.title || 'AIventure'
+    });
+
+root.Vifu = {
+  ...vifu,
+  version: COMPANION_SDK_VERSION,
+  protocolVersion: COMPANION_PROTOCOL_VERSION,
+  __receiveHostMessage: (envelopeOrMessage) => vifu._handleEnvelope(envelopeOrMessage)
+};
+
+setTimeout(() => vifu._notify(COMPANION_METHODS.runtimeReady, vifu.status()), 0);
 
 bootstrapApplication(AppComponent, appConfig)
   .catch((err) => console.error(err));

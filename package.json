@@ -37,6 +37,7 @@
         "@angular/router": "^19.2.0",
         "@google/genai": "^1.34.0",
         "@huggingface/transformers": "^4.2.0",
+        "@vifu/sdk": "0.1.0-alpha.0",
         "json5": "^2.2.3",
         "phaser": "^3.90.0",
         "rxjs": "~7.8.0",
