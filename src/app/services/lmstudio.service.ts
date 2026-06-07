@@ -21,6 +21,17 @@ import { EventBus } from '../../game/core/EventBus';
 import { ModelBackend } from './model-backend.interface';
 import { LogService } from './log.service';
 
+type VifuWindow = Window & {
+  Vifu?: {
+    services?: {
+      invoke?: (service: string, args?: Record<string, unknown>) => Promise<unknown>;
+      ai?: {
+        turn?: (input: Record<string, unknown>) => Promise<unknown>;
+      };
+    };
+  };
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -81,6 +92,66 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     return jsonBody;
   }
 
+  private vifuAiTurn() {
+    const services = (window as VifuWindow).Vifu?.services;
+    return services?.ai?.turn ?? (
+      services?.invoke
+        ? (input: Record<string, unknown>) => services.invoke?.('ai.turn', input)
+        : null
+    );
+  }
+
+  private async invokeVifuAi(tool_list: string, stream = false): Promise<any | null> {
+    const turn = this.vifuAiTurn();
+    if (!turn) return null;
+    try {
+      return await turn({
+        model: 'consenger/conversation',
+        messages: this.history,
+        tools: this.constructTools(tool_list),
+        stream
+      });
+    } catch (error) {
+      console.warn('Vifu AI turn failed; falling back to LM Studio.', error);
+      return null;
+    }
+  }
+
+  private chatMessageFromResponse(response: any): any | null {
+    return response?.choices?.[0]?.message ?? null;
+  }
+
+  private emitToolCalls(toolCalls: any[]): string[] {
+    this.waitingToolCallCount = toolCalls.length;
+    const yielded: string[] = [];
+    for (const tc of toolCalls) {
+      const functionCall = {
+        name: tc.function?.name,
+        args: tc.function?.arguments ?? {}
+      };
+      try { functionCall.args = JSON.parse(functionCall.args); } catch (e) {}
+      EventBus.emit('model-function-call', functionCall);
+      yielded.push(`Function call: ${functionCall.name}`);
+    }
+    return yielded;
+  }
+
+  private applyChatCompletionResponse(response: any): { content: string; toolYields: string[] } | null {
+    const message = this.chatMessageFromResponse(response);
+    if (!message) return null;
+    const content = typeof message.content === 'string' ? message.content : '';
+    const toolCalls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
+    this.history.push({
+      role: 'assistant',
+      content: content || null,
+      ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {})
+    });
+    return {
+      content,
+      toolYields: this.emitToolCalls(toolCalls)
+    };
+  }
+
     // [START tool_code]
   async handleToolResult(result: any) {
     // If we don't have a pending tool call ID, we can't properly respond in OpenAI format.
@@ -103,6 +174,15 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     console.log("All tools processed. History:", this.history);
 
     try {
+        const vifuResponse = await this.invokeVifuAi(this.lastTool);
+        if (vifuResponse) {
+            const completion = this.applyChatCompletionResponse(vifuResponse);
+            if (completion?.content) {
+                this.logService.addLog(`Vifu AI: ${completion.content}`);
+            }
+            return;
+        }
+
         const response = await fetch(this.apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -212,6 +292,16 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     this.history.push({ role: 'user', content: userMessage });
 
     try {
+        const vifuResponse = await this.invokeVifuAi(tool_list);
+        if (vifuResponse) {
+            const completion = this.applyChatCompletionResponse(vifuResponse);
+            if (completion) {
+                if (completion.content) yield completion.content;
+                for (const item of completion.toolYields) yield item;
+                return;
+            }
+        }
+
         const response = await fetch(this.apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -328,6 +418,22 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     }
 
     try {
+        const turn = this.vifuAiTurn();
+        if (turn) {
+            const response: any = await turn({
+                model: 'consenger/conversation',
+                messages: [
+                    { role: 'system', content: systemInstruction },
+                    { role: 'user', content: prompt }
+                ]
+            });
+            const message = this.chatMessageFromResponse(response);
+            if (typeof message?.content === 'string' && message.content.trim()) {
+                yield message.content;
+                return;
+            }
+        }
+
         const response = await fetch(this.apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

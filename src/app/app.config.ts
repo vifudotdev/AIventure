@@ -26,7 +26,6 @@ import { LmStudioService } from './services/lmstudio.service';
 import { TransformersService } from './services/transformers.service';
 import { ChromePromptService } from './services/chrome-prompt.service';
 import { MediaPipeService } from './services/mediapipe.service';
-import { VifuModelService } from './services/vifu-model.service';
 
 // [START solution_code]
 
@@ -39,8 +38,7 @@ export const appConfig: ApplicationConfig & { overrideStartLayoutId?: string } =
     provideHttpClient(),
     // { provide: MODEL_BACKEND, useClass: GeminiService }, // Default, no need to specify if providedIn: 'root' works, but good to have explicit
     // { provide: MODEL_BACKEND, useClass: OllamaService }, // Uncomment to use Ollama
-    { provide: MODEL_BACKEND, useClass: VifuModelService },
-    // { provide: MODEL_BACKEND, useClass: LmStudioService }, // Uncomment to use LM Studio
+    { provide: MODEL_BACKEND, useClass: LmStudioService }, // Uses Vifu SDK AI when hosted by Vifu, otherwise LM Studio
     // { provide: MODEL_BACKEND, useClass: TransformersService }, // Uncomment to use transformers.js
     // { provide: MODEL_BACKEND, useClass: ChromePromptService }, // Uncomment to use Chrome Prompt API
     //{ provide: MODEL_BACKEND, useClass: MediaPipeService } // Uncomment to use MediaPipe LLM Inference API
