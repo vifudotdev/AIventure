@@ -110,7 +110,7 @@ npm run build
 This fork includes a Vifu manifest and SDK host wiring:
 
 - `manifest.json` describes the web runtime, build command, AI dialogue capability, data bundle, and source link.
-- The existing `LmStudioService` calls the Vifu SDK AI turn service when the game is hosted by Vifu, and falls back to LM Studio for local development.
+- The existing `LmStudioService` calls `Vifu.ai.chat(...)` when the game is hosted by Vifu, and falls back to LM Studio for local development.
 - `src/main.ts` initializes `@vifu/sdk` so the game can talk to the Vifu host when embedded.
 
 Validate and build with the Vifu CLI:

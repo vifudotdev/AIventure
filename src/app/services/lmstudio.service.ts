@@ -23,11 +23,8 @@ import { LogService } from './log.service';
 
 type VifuWindow = Window & {
   Vifu?: {
-    services?: {
-      invoke?: (service: string, args?: Record<string, unknown>) => Promise<unknown>;
-      ai?: {
-        turn?: (input: Record<string, unknown>) => Promise<unknown>;
-      };
+    ai?: {
+      chat?: (input: Record<string, unknown>) => Promise<any>;
     };
   };
 };
@@ -92,33 +89,23 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     return jsonBody;
   }
 
-  private vifuAiTurn() {
-    const services = (window as VifuWindow).Vifu?.services;
-    return services?.ai?.turn ?? (
-      services?.invoke
-        ? (input: Record<string, unknown>) => services.invoke?.('ai.turn', input)
-        : null
-    );
+  private vifuAiChat() {
+    return (window as VifuWindow).Vifu?.ai?.chat ?? null;
   }
 
-  private async invokeVifuAi(tool_list: string, stream = false): Promise<any | null> {
-    const turn = this.vifuAiTurn();
-    if (!turn) return null;
+  private async completeWithVifu(tool_list: string): Promise<{ content: string; toolYields: string[] } | null> {
+    const chat = this.vifuAiChat();
+    if (!chat) return null;
     try {
-      return await turn({
-        model: 'consenger/conversation',
+      const response = await chat({
         messages: this.history,
-        tools: this.constructTools(tool_list),
-        stream
+        tools: this.constructTools(tool_list)
       });
+      return this.applyChatCompletionResponse(response);
     } catch (error) {
-      console.warn('Vifu AI turn failed; falling back to LM Studio.', error);
+      console.warn('Vifu AI failed; falling back to LM Studio.', error);
       return null;
     }
-  }
-
-  private chatMessageFromResponse(response: any): any | null {
-    return response?.choices?.[0]?.message ?? null;
   }
 
   private emitToolCalls(toolCalls: any[]): string[] {
@@ -137,7 +124,7 @@ export class LmStudioService implements ModelBackend, OnDestroy {
   }
 
   private applyChatCompletionResponse(response: any): { content: string; toolYields: string[] } | null {
-    const message = this.chatMessageFromResponse(response);
+    const message = response?.choices?.[0]?.message;
     if (!message) return null;
     const content = typeof message.content === 'string' ? message.content : '';
     const toolCalls = Array.isArray(message.tool_calls) ? message.tool_calls : [];
@@ -174,12 +161,9 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     console.log("All tools processed. History:", this.history);
 
     try {
-        const vifuResponse = await this.invokeVifuAi(this.lastTool);
-        if (vifuResponse) {
-            const completion = this.applyChatCompletionResponse(vifuResponse);
-            if (completion?.content) {
-                this.logService.addLog(`Vifu AI: ${completion.content}`);
-            }
+        const completion = await this.completeWithVifu(this.lastTool);
+        if (completion) {
+            if (completion.content) this.logService.addLog(`Vifu AI: ${completion.content}`);
             return;
         }
 
@@ -292,14 +276,11 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     this.history.push({ role: 'user', content: userMessage });
 
     try {
-        const vifuResponse = await this.invokeVifuAi(tool_list);
-        if (vifuResponse) {
-            const completion = this.applyChatCompletionResponse(vifuResponse);
-            if (completion) {
-                if (completion.content) yield completion.content;
-                for (const item of completion.toolYields) yield item;
-                return;
-            }
+        const completion = await this.completeWithVifu(tool_list);
+        if (completion) {
+            if (completion.content) yield completion.content;
+            for (const item of completion.toolYields) yield item;
+            return;
         }
 
         const response = await fetch(this.apiUrl, {
@@ -418,18 +399,17 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     }
 
     try {
-        const turn = this.vifuAiTurn();
-        if (turn) {
-            const response: any = await turn({
-                model: 'consenger/conversation',
+        const chat = this.vifuAiChat();
+        if (chat) {
+            const response = await chat({
                 messages: [
                     { role: 'system', content: systemInstruction },
                     { role: 'user', content: prompt }
                 ]
             });
-            const message = this.chatMessageFromResponse(response);
-            if (typeof message?.content === 'string' && message.content.trim()) {
-                yield message.content;
+            const content = response?.choices?.[0]?.message?.content;
+            if (typeof content === 'string' && content.trim()) {
+                yield content;
                 return;
             }
         }
