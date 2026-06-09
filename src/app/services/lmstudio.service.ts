@@ -21,19 +21,6 @@ import { EventBus } from '../../game/core/EventBus';
 import { ModelBackend } from './model-backend.interface';
 import { LogService } from './log.service';
 
-type VifuWindow = Window & {
-  Vifu?: {
-    ai?: {
-      chat?: (input: Record<string, unknown>) => Promise<any>;
-      generateText?: (input: Record<string, unknown>) => Promise<{
-        content: string;
-        messages?: any[];
-        toolCalls?: Array<{ name: string }>;
-      }>;
-    };
-  };
-};
-
 @Injectable({
   providedIn: 'root'
 })
@@ -43,7 +30,6 @@ export class LmStudioService implements ModelBackend, OnDestroy {
   private model = 'google/gemma-4-e4b-it'; // LM Studio usually accepts any string here if one model is loaded
   private lastTool: string = "[]";
   private waitingToolCallCount = 0;
-  private pendingVifuToolResults: Array<(result: any) => void> = [];
 
     // [END solution_code]
 
@@ -59,7 +45,6 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     this.history = [];
     this.lastTool = "[]";
     this.waitingToolCallCount = 0;
-    this.pendingVifuToolResults = [];
   }
 
   private constructTools(tool_list: string) {
@@ -96,69 +81,8 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     return jsonBody;
   }
 
-  private vifuAi() {
-    return (window as VifuWindow).Vifu?.ai ?? null;
-  }
-
-  private constructVifuTools(tool_list: string) {
-    if (!tool_list) return undefined;
-
-    try {
-      const functionObjs = JSON.parse(tool_list);
-      if (!Array.isArray(functionObjs) || functionObjs.length === 0) return undefined;
-
-      const tools: Record<string, any> = {};
-      for (const obj of functionObjs) {
-        if (!obj?.name) continue;
-        tools[obj.name] = {
-          description: obj.description,
-          parameters: obj.parameters,
-          execute: (args: Record<string, unknown>) => this.executeVifuTool(obj.name, args)
-        };
-      }
-      return Object.keys(tools).length > 0 ? tools : undefined;
-    } catch (e) {
-      console.warn("Failed to parse context for Vifu tools:", e);
-    }
-    return undefined;
-  }
-
-  private executeVifuTool(name: string, args: Record<string, unknown>) {
-    return new Promise((resolve) => {
-      this.pendingVifuToolResults.push((result) => resolve(result?.output ?? result));
-      EventBus.emit('model-function-call', { name, args });
-    });
-  }
-
-  private async completeWithVifu(tool_list: string): Promise<{ content: string; toolYields: string[] } | null> {
-    const generateText = this.vifuAi()?.generateText;
-    if (!generateText) return null;
-    try {
-      const result = await generateText({
-        messages: this.history,
-        tools: this.constructVifuTools(tool_list)
-      });
-      if (Array.isArray(result.messages)) this.history = result.messages;
-      return {
-        content: result.content || '',
-        toolYields: Array.isArray(result.toolCalls)
-          ? result.toolCalls.map((toolCall) => `Function call: ${toolCall.name}`)
-          : []
-      };
-    } catch (error) {
-      console.warn('Vifu AI failed; falling back to LM Studio.', error);
-      return null;
-    }
-  }
-
     // [START tool_code]
   async handleToolResult(result: any) {
-    const pendingVifuToolResult = this.pendingVifuToolResults.shift();
-    if (pendingVifuToolResult) {
-        pendingVifuToolResult(result);
-        return;
-    }
-
     // If we don't have a pending tool call ID, we can't properly respond in OpenAI format.
     // However, we can try to proceed or just log a warning.
     // In sequential execution, currentToolCallId should be set from the previous turn.
@@ -179,12 +103,6 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     console.log("All tools processed. History:", this.history);
 
     try {
-        const completion = await this.completeWithVifu(this.lastTool);
-        if (completion) {
-            if (completion.content) this.logService.addLog(`Vifu AI: ${completion.content}`);
-            return;
-        }
-
         const response = await fetch(this.apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -294,13 +212,6 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     this.history.push({ role: 'user', content: userMessage });
 
     try {
-        const completion = await this.completeWithVifu(tool_list);
-        if (completion) {
-            if (completion.content) yield completion.content;
-            for (const item of completion.toolYields) yield item;
-            return;
-        }
-
         const response = await fetch(this.apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -417,21 +328,6 @@ export class LmStudioService implements ModelBackend, OnDestroy {
     }
 
     try {
-        const chat = this.vifuAi()?.chat;
-        if (chat) {
-            const response = await chat({
-                messages: [
-                    { role: 'system', content: systemInstruction },
-                    { role: 'user', content: prompt }
-                ]
-            });
-            const content = response?.choices?.[0]?.message?.content;
-            if (typeof content === 'string' && content.trim()) {
-                yield content;
-                return;
-            }
-        }
-
         const response = await fetch(this.apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

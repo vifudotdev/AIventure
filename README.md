@@ -110,7 +110,7 @@ npm run build
 This fork includes a Vifu manifest and SDK host wiring:
 
 - `manifest.json` describes the web runtime, build command, AI dialogue capability, data bundle, and source link.
-- The existing `LmStudioService` calls `Vifu.ai.chat(...)` when the game is hosted by Vifu, and falls back to LM Studio for local development.
+- `VifuModelService` implements AIventure's `ModelBackend` using `Vifu.ai.generateText(...)` and delegates to `LmStudioService` when the Vifu host SDK is unavailable or a hosted AI call fails.
 - `src/main.ts` initializes `@vifu/sdk` so the game can talk to the Vifu host when embedded.
 
 Validate and build with the Vifu CLI:
@@ -126,7 +126,7 @@ Deploy to a Vifu API:
 vifu deploy --dir .
 ```
 
-Outside a Vifu host, the original LM Studio backend keeps the game runnable locally.
+Outside a Vifu host, `VifuModelService` lazily falls back to the original LM Studio backend so the game remains runnable locally.
 
 ### Sprite pack license / credits
 
