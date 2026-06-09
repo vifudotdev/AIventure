@@ -5,7 +5,7 @@ import { ModelBackend } from './model-backend.interface';
 type VifuWindow = Window & {
   Vifu?: {
     ready?: () => Promise<unknown>;
-    status?: () => { hostConnected?: boolean; transport?: string };
+    status?: () => VifuStatus;
     ai?: {
       chat?: (input: Record<string, unknown>) => Promise<any>;
       generateText?: (input: Record<string, unknown>) => Promise<{
@@ -16,6 +16,8 @@ type VifuWindow = Window & {
     };
   };
 };
+
+type VifuStatus = { hostConnected?: boolean; transport?: string };
 
 @Injectable({
   providedIn: 'root'
@@ -42,14 +44,24 @@ export class VifuModelService implements ModelBackend, OnDestroy {
     return (window as VifuWindow).Vifu?.ai ?? null;
   }
 
-  private async waitForVifuHost() {
+  private vifuStatus(): VifuStatus {
+    return (window as VifuWindow).Vifu?.status?.() ?? { transport: 'none', hostConnected: false };
+  }
+
+  private isHostedVifuRuntime(status: VifuStatus): boolean {
+    return Boolean(status.hostConnected || (status.transport && status.transport !== 'none'));
+  }
+
+  private async waitForVifuHost(): Promise<VifuStatus> {
     const vifu = (window as VifuWindow).Vifu;
-    if (!vifu?.ready) return;
+    const initialStatus = this.vifuStatus();
+    if (!vifu?.ready || initialStatus.hostConnected || initialStatus.transport === 'none') return initialStatus;
     this.hostReadyAttempt ??= Promise.race([
       vifu.ready().then(() => undefined),
-      new Promise<void>((resolve) => setTimeout(resolve, 750)),
+      new Promise<void>((resolve) => setTimeout(resolve, 5000)),
     ]).catch(() => undefined);
     await this.hostReadyAttempt;
+    return this.vifuStatus();
   }
 
   private parseTools(tool_list: string): Array<{ name: string; description?: string; parameters?: any }> {
@@ -88,6 +100,7 @@ export class VifuModelService implements ModelBackend, OnDestroy {
       }
     }
     if (!best) return null;
+    console.info('AIventure: using deterministic local tool fallback', { tool: best.name });
     EventBus.emit('model-function-call', { name: best.name, args: {} });
     return `Function call: ${best.name}`;
   }
@@ -128,10 +141,11 @@ export class VifuModelService implements ModelBackend, OnDestroy {
   }
 
   async *generateTextStream(tool_list: string, context: string, prompt: string): AsyncGenerator<string> {
-    await this.waitForVifuHost();
+    const status = await this.waitForVifuHost();
+    const isHosted = this.isHostedVifuRuntime(status);
     const generateText = this.vifuAi()?.generateText;
     if (!generateText) {
-      const deterministic = this.deterministicToolCall(tool_list, context, prompt);
+      const deterministic = isHosted ? null : this.deterministicToolCall(tool_list, context, prompt);
       yield deterministic ?? this.hostedAiUnavailableMessage();
       return;
     }
@@ -140,6 +154,7 @@ export class VifuModelService implements ModelBackend, OnDestroy {
     this.history.push({ role: 'user', content: userMessage });
 
     try {
+      console.info('AIventure: requesting Vifu AI service', { model: 'basic', hostConnected: status.hostConnected });
       const result = await generateText({
         model: 'basic',
         messages: this.history,
@@ -157,13 +172,13 @@ export class VifuModelService implements ModelBackend, OnDestroy {
       }
     } catch (error) {
       console.warn('Vifu AI failed.', error);
-      const deterministic = this.deterministicToolCall(tool_list, context, prompt);
+      const deterministic = isHosted ? null : this.deterministicToolCall(tool_list, context, prompt);
       yield deterministic ?? this.hostedAiUnavailableMessage(error);
     }
   }
 
   async *generateHtmlStream(prompt: string, previousHtml: string = ""): AsyncGenerator<string> {
-    await this.waitForVifuHost();
+    const status = await this.waitForVifuHost();
     const chat = this.vifuAi()?.chat;
     if (!chat) {
       yield previousHtml || '<html><body><p>Vifu AI is unavailable right now.</p></body></html>';
@@ -177,6 +192,7 @@ export class VifuModelService implements ModelBackend, OnDestroy {
     }
 
     try {
+      console.info('AIventure: requesting Vifu AI chat service', { hostConnected: status.hostConnected });
       const response = await chat({
         messages: [
           { role: 'system', content: systemInstruction },
