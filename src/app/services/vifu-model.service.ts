@@ -1,10 +1,11 @@
-import { Injectable, Injector, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { EventBus } from '../../game/core/EventBus';
 import { ModelBackend } from './model-backend.interface';
-import { LmStudioService } from './lmstudio.service';
 
 type VifuWindow = Window & {
   Vifu?: {
+    ready?: () => Promise<unknown>;
+    status?: () => { hostConnected?: boolean; transport?: string };
     ai?: {
       chat?: (input: Record<string, unknown>) => Promise<any>;
       generateText?: (input: Record<string, unknown>) => Promise<{
@@ -22,55 +23,96 @@ type VifuWindow = Window & {
 export class VifuModelService implements ModelBackend, OnDestroy {
   private history: any[] = [];
   private pendingToolResults: Array<(result: any) => void> = [];
-  private fallbackBackend?: LmStudioService;
-  private fallbackActive = false;
+  private hostReadyAttempt?: Promise<void>;
 
-  constructor(private injector: Injector) {
+  constructor() {
     EventBus.on('model-tool-execution-result', this.handleToolResult, this);
   }
 
   ngOnDestroy() {
     EventBus.off('model-tool-execution-result', this.handleToolResult, this);
-    this.fallbackBackend?.ngOnDestroy();
   }
 
   public reset() {
     this.history = [];
     this.pendingToolResults = [];
-    this.fallbackBackend?.reset();
   }
 
   private vifuAi() {
     return (window as VifuWindow).Vifu?.ai ?? null;
   }
 
-  private fallback() {
-    this.fallbackActive = true;
-    this.fallbackBackend ??= this.injector.get(LmStudioService);
-    return this.fallbackBackend;
+  private async waitForVifuHost() {
+    const vifu = (window as VifuWindow).Vifu;
+    if (!vifu?.ready) return;
+    this.hostReadyAttempt ??= Promise.race([
+      vifu.ready().then(() => undefined),
+      new Promise<void>((resolve) => setTimeout(resolve, 750)),
+    ]).catch(() => undefined);
+    await this.hostReadyAttempt;
+  }
+
+  private parseTools(tool_list: string): Array<{ name: string; description?: string; parameters?: any }> {
+    if (!tool_list) return [];
+    try {
+      const parsed = JSON.parse(tool_list);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((tool): tool is { name: string; description?: string; parameters?: any } => (
+        typeof tool?.name === 'string' && tool.name.trim().length > 0
+      ));
+    } catch (e) {
+      console.warn("Failed to parse Vifu tool list:", e);
+      return [];
+    }
+  }
+
+  private words(value: string): string[] {
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  private deterministicToolCall(tool_list: string, context: string, prompt: string): string | null {
+    const tools = this.parseTools(tool_list);
+    if (tools.length === 0) return null;
+    const inputWords = new Set(this.words(`${context}\n${prompt}`));
+    let best: { name: string; score: number } | null = null;
+    for (const candidate of tools) {
+      const nameWords = this.words(candidate.name);
+      if (nameWords.length === 0) continue;
+      const score = nameWords.filter((word) => inputWords.has(word)).length;
+      if (score === nameWords.length && (!best || score > best.score)) {
+        best = { name: candidate.name, score };
+      }
+    }
+    if (!best) return null;
+    EventBus.emit('model-function-call', { name: best.name, args: {} });
+    return `Function call: ${best.name}`;
+  }
+
+  private hostedAiUnavailableMessage(error?: unknown): string {
+    const detail = error instanceof Error ? error.message : '';
+    if (/auth|token|sign/i.test(detail)) {
+      return 'Vifu AI needs a signed-in Vifu session for this game.';
+    }
+    return 'Vifu AI is unavailable right now. Please try again.';
   }
 
   private constructVifuTools(tool_list: string) {
-    if (!tool_list) return undefined;
+    const functionObjs = this.parseTools(tool_list);
+    if (functionObjs.length === 0) return undefined;
 
-    try {
-      const functionObjs = JSON.parse(tool_list);
-      if (!Array.isArray(functionObjs) || functionObjs.length === 0) return undefined;
-
-      const tools: Record<string, any> = {};
-      for (const obj of functionObjs) {
-        if (!obj?.name) continue;
-        tools[obj.name] = {
-          description: obj.description,
-          parameters: obj.parameters,
-          execute: (args: Record<string, unknown>) => this.executeVifuTool(obj.name, args)
-        };
-      }
-      return Object.keys(tools).length > 0 ? tools : undefined;
-    } catch (e) {
-      console.warn("Failed to parse Vifu tool list:", e);
+    const tools: Record<string, any> = {};
+    for (const obj of functionObjs) {
+      tools[obj.name] = {
+        description: obj.description,
+        parameters: obj.parameters,
+        execute: (args: Record<string, unknown>) => this.executeVifuTool(obj.name, args)
+      };
     }
-    return undefined;
+    return Object.keys(tools).length > 0 ? tools : undefined;
   }
 
   private executeVifuTool(name: string, args: Record<string, unknown>) {
@@ -81,16 +123,16 @@ export class VifuModelService implements ModelBackend, OnDestroy {
   }
 
   private handleToolResult(result: any) {
-    if (this.fallbackActive) return;
-
     const pendingToolResult = this.pendingToolResults.shift();
     if (pendingToolResult) pendingToolResult(result);
   }
 
   async *generateTextStream(tool_list: string, context: string, prompt: string): AsyncGenerator<string> {
+    await this.waitForVifuHost();
     const generateText = this.vifuAi()?.generateText;
-    if (this.fallbackActive || !generateText) {
-      yield* this.fallback().generateTextStream(tool_list, context, prompt);
+    if (!generateText) {
+      const deterministic = this.deterministicToolCall(tool_list, context, prompt);
+      yield deterministic ?? this.hostedAiUnavailableMessage();
       return;
     }
 
@@ -99,6 +141,7 @@ export class VifuModelService implements ModelBackend, OnDestroy {
 
     try {
       const result = await generateText({
+        model: 'basic',
         messages: this.history,
         tools: this.constructVifuTools(tool_list)
       });
@@ -113,15 +156,17 @@ export class VifuModelService implements ModelBackend, OnDestroy {
         }
       }
     } catch (error) {
-      console.warn('Vifu AI failed; falling back to LM Studio.', error);
-      yield* this.fallback().generateTextStream(tool_list, context, prompt);
+      console.warn('Vifu AI failed.', error);
+      const deterministic = this.deterministicToolCall(tool_list, context, prompt);
+      yield deterministic ?? this.hostedAiUnavailableMessage(error);
     }
   }
 
   async *generateHtmlStream(prompt: string, previousHtml: string = ""): AsyncGenerator<string> {
+    await this.waitForVifuHost();
     const chat = this.vifuAi()?.chat;
-    if (this.fallbackActive || !chat) {
-      yield* this.fallback().generateHtmlStream(prompt, previousHtml);
+    if (!chat) {
+      yield previousHtml || '<html><body><p>Vifu AI is unavailable right now.</p></body></html>';
       return;
     }
 
@@ -144,9 +189,9 @@ export class VifuModelService implements ModelBackend, OnDestroy {
         return;
       }
     } catch (error) {
-      console.warn('Vifu AI HTML generation failed; falling back to LM Studio.', error);
+      console.warn('Vifu AI HTML generation failed.', error);
     }
 
-    yield* this.fallback().generateHtmlStream(prompt, previousHtml);
+    yield previousHtml || '<html><body><p>Vifu AI is unavailable right now.</p></body></html>';
   }
 }
