@@ -117,13 +117,13 @@ Validate and build with the Vifu CLI:
 
 ```bash
 vifu manifest check --dir .
-vifu build --game-dir .
+vifu build .
 ```
 
 Deploy to a Vifu API:
 
 ```bash
-vifu deploy --dir .
+vifu deploy .
 ```
 
 Outside a Vifu host, `VifuModelService` lazily falls back to the original LM Studio backend so the game remains runnable locally.

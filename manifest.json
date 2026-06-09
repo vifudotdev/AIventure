@@ -1,7 +1,6 @@
 {
   "manifestVersion": 1,
   "type": "game",
-  "id": "aiventure",
   "name": "AIventure",
   "version": "0.1.0-vifu.1",
   "description": "A Phaser adventure game with AI-driven NPC dialogue and puzzle actions.",
