@@ -16,7 +16,7 @@ AIventure is a top-down exploration game where players navigate a grid-based wor
 *   **Zelda-Style Camera:** Camera transitions between screen-sized rooms.
 *   **Interactive Objects:** Support for blockers, chat interactions, and external links.
 *   **Smart NPCs:** Autonomous characters that can patrol, follow the player, or execute AI-driven commands.
-*   **Dual AI Integration:** Seamlessly powered by **Google Gemini** and **Gemma** to drive sophisticated NPC dialogues and dynamic puzzle-solving logic.
+*   **Vifu AI Integration:** Uses `@vifu/sdk` and the hosted Vifu AI service for NPC dialogue and tool-driven game actions after deployment.
 
 ## UI in Angular
 
@@ -54,40 +54,13 @@ The UI is divided into 3 major sections:
 
 *   Node.js and npm installed.
 
-### Setting up the Python LLM Service
-
-Follow the README instructions contained in the Python LLM Service folder:
-
-`python-llm-service/README.md`
-
 ### Installation
 
 ```bash
 npm install
 ```
 
-### Configuring your model backend
-
-#### Locally-hosted Gemma 4
-
-In `src/app/app.config.ts` uncomment the `LmStudioService` and comment out all other services.
-
-Ensure you have the `python-llm-service` running local server running:
-
-```bash
-cd python-llm-service
-python -m python_llm_service
-```
-
-#### Gemini
-
-In `src/app/app.config.ts` uncomment the `GeminiService` and comment out all other services.
-
-Ensure your API key is set in the environment variables:
-
-```bash
-export GEMINI_API_KEY="your-api-key"
-```
+`src/app/app.config.ts` wires `MODEL_BACKEND` to `VifuModelService` by default. No local LLM server or browser API key is required for the deployed Vifu path.
 
 ### Run Development Server
 
@@ -102,7 +75,7 @@ npm run dev
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
 ```bash
-npm run build
+npm run build-nolog
 ```
 
 ## Run on Vifu
@@ -123,10 +96,10 @@ vifu build
 Deploy to a Vifu API:
 
 ```bash
-vifu deploy
+vifu deploy --api-url https://api-dev.consenger.com
 ```
 
-Outside a Vifu host, simple tool commands use a deterministic matcher. To test LM Studio directly, switch `MODEL_BACKEND` in `src/app/app.config.ts` to `LmStudioService` for local-only development.
+Outside a Vifu host, simple tool commands use a deterministic matcher so the core game remains easy to try locally. The deployed game should use Vifu AI through the SDK host bridge, not direct calls to local provider URLs.
 
 ### Sprite pack license / credits
 

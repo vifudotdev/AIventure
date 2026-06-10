@@ -88,6 +88,16 @@
   height: 24px;
 }
 
+.text-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #0055ff;
+  color: #fff;
+  font: 700 0.75rem/1 monospace;
+  text-shadow: 1px 1px 0 #002288;
+}
+
 .collectible-img {
   width: 24px;
   height: 24px;

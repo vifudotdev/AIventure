@@ -17,9 +17,9 @@ limitations under the License.
 <div class="right-panel-container">
   <div class="right-panel-header">
     <div class="header">
-      <img src="assets/gemini-icon.png" class="title-icon" alt="Gemini">
+      <span class="title-icon text-icon">AI</span>
       <h1>AI<span class="venture">venture</span></h1>
-      <img src="assets/gemma-icon.png" class="title-icon" alt="Gemma">
+      <span class="title-icon text-icon">V</span>
     </div>
     <div class="collectibles-tracker">
       <div *ngFor="let collectible of collectiblesTracker | keyvalue" class="collectible-box">
@@ -97,7 +97,7 @@ limitations under the License.
         <span class="execution-result">{{ executionResult }}</span>
       </div>
       <p class="hint" *ngIf="currentCodeInteraction">
-        Hint: Ask Gemini to generate the code for you!
+        Hint: Ask the AI to generate the code for you!
       </p>
     </div>
     <div *ngIf="activeTab === 'iframe'" class="content-pane iframe-pane">
