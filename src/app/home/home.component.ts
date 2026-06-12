@@ -27,8 +27,19 @@ import { SocketService } from '../services/socket.interface';
 import { SOCKET_SERVICE } from '../services/socket-token';
 import { MODEL_BACKEND } from '../services/model-token';
 import { ModelBackend } from '../services/model-backend.interface';
-import { TransformersService } from '../services/transformers.service';
-import { MediaPipeService } from '../services/mediapipe.service';
+
+type LoadingModelBackend = ModelBackend & {
+    loadingProgress$: { subscribe: (listener: (value: number) => void) => unknown };
+    loadingStatus$: { subscribe: (listener: (value: string) => void) => unknown };
+    downloads$?: { subscribe: (listener: (value: any[]) => void) => unknown };
+    isReady$: { subscribe: (listener: (value: boolean) => void) => unknown };
+    init: () => unknown;
+};
+
+function isLoadingModelBackend(value: ModelBackend): value is LoadingModelBackend {
+    const candidate = value as Partial<LoadingModelBackend>;
+    return Boolean(candidate.init && candidate.loadingProgress$ && candidate.loadingStatus$ && candidate.isReady$);
+}
 
 @Component({
     selector: 'app-home',
@@ -61,13 +72,14 @@ export class HomeComponent implements OnInit
     }
 
     ngOnInit() {
-        // Check if using TransformersService or MediaPipeService and if it needs loading
-        if (this.modelBackend instanceof TransformersService || this.modelBackend instanceof MediaPipeService) {
+        // Some optional local model providers expose loading hooks. Avoid static imports
+        // so unused providers with remote-code paths can be tree-shaken from Vifu builds.
+        if (isLoadingModelBackend(this.modelBackend)) {
             this.isLoadingModel = true;
             this.modelBackend.loadingProgress$.subscribe(p => this.loadingProgress = p);
             this.modelBackend.loadingStatus$.subscribe(s => this.loadingStatus = s);
             
-            if (this.modelBackend instanceof TransformersService) {
+            if (this.modelBackend.downloads$) {
                 this.modelBackend.downloads$.subscribe(d => this.downloads = d);
             }
 
@@ -77,7 +89,7 @@ export class HomeComponent implements OnInit
                 }
             });
 
-            (this.modelBackend as any).init();
+            this.modelBackend.init();
         }
 
         // Connect to socket
