@@ -93,10 +93,10 @@ vifu manifest check
 vifu build
 ```
 
-Deploy to a Vifu API:
+Deploy to Vifu:
 
 ```bash
-vifu deploy --api-url https://api-dev.consenger.com
+vifu deploy
 ```
 
 Outside a Vifu host, simple tool commands use a deterministic matcher so the core game remains easy to try locally. The deployed game should use Vifu AI through the SDK host bridge, not direct calls to local provider URLs.
