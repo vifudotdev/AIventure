@@ -1,14 +1,3 @@
 {
-  "name": "AIventure",
-  "title": "AIventure",
-  "engine": "phaser",
-  "description": "A Phaser adventure game with AI-driven NPC dialogue and puzzle actions.",
-  "tags": [
-    "ai-native",
-    "adventure",
-    "phaser",
-    "npc",
-    "puzzle"
-  ],
-  "category": "story"
+  "name": "AIventure"
 }

@@ -75,14 +75,14 @@ npm run dev
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
 ```bash
-npm run build-nolog
+npm run build
 ```
 
 ## Run on Vifu
 
 This fork includes a Vifu manifest and SDK host wiring:
 
-- `manifest.json` describes the web runtime, build command, AI dialogue capability, data bundle, and source link.
+- `manifest.json` stays small; Vifu infers the Angular build command, deploy output, runtime entry, and default AI availability.
 - `VifuModelService` implements AIventure's `ModelBackend` using `Vifu.ai.generateText(...)`; deployed games never call local provider URLs such as LM Studio.
 - `src/main.ts` initializes `@vifu/sdk` so the game can talk to the Vifu host when embedded.
 

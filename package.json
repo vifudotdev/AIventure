@@ -5,7 +5,7 @@
     "scripts": {
         "ng": "ng",
         "dev": "node set-env.js && node log dev & ng serve",
-        "build": "node set-env.js && node log.js build & ng build --base-href='./'",
+        "build": "node set-env.js && ng build --base-href='./'",
         "test": "ng test",
         "dev-nolog": "node set-env.js && ng serve",
         "build-nolog": "node set-env.js && ng build --base-href='./'"
