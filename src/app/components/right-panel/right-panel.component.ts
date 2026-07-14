@@ -83,7 +83,7 @@ export class RightPanelComponent implements OnInit, OnDestroy {
 
   openGitHub()
   {
-    window.open('https://github.com/vifu-labs/AIventure', '_blank');
+    window.open('https://github.com/vifudotdev/AIventure', '_blank');
   }
 
   onCodeChange() {
