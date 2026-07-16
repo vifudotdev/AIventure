@@ -2,6 +2,8 @@
 
 A 2D grid-based adventure game built with [Phaser 3](https://phaser.io/) and [Angular](https://angular.io/).
 
+Original project: [bebechien/AIventure](https://github.com/bebechien/AIventure).
+
 ## Overview
 
 AIventure is a top-down exploration game where players navigate a grid-based world, interact with objects, and explore different rooms. The project demonstrates how to integrate Phaser game instances within an Angular application, handling communication between the frameworks.
@@ -16,7 +18,7 @@ AIventure is a top-down exploration game where players navigate a grid-based wor
 *   **Zelda-Style Camera:** Camera transitions between screen-sized rooms.
 *   **Interactive Objects:** Support for blockers, chat interactions, and external links.
 *   **Smart NPCs:** Autonomous characters that can patrol, follow the player, or execute AI-driven commands.
-*   **Vifu AI Integration:** Uses `@vifu/sdk` and the hosted Vifu AI service for NPC dialogue and tool-driven game actions after deployment.
+*   **Vifu AI Integration:** Uses `@vifu/hub` and the hosted Vifu AI service for NPC dialogue and tool-driven game actions after deployment.
 
 ## UI in Angular
 
@@ -78,13 +80,17 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 npm run build
 ```
 
-## Run on Vifu
+## Run On Vifu
 
-This fork includes a Vifu manifest and SDK host wiring:
+The Vifu integration makes AIventure a Vifu-native published game while keeping
+its Angular + Phaser structure intact:
 
-- `manifest.json` stays small; Vifu infers the Angular build command, deploy output, runtime entry, and default AI availability.
-- `VifuModelService` implements AIventure's `ModelBackend` using `Vifu.ai.generateText(...)`; deployed games never call local provider URLs such as LM Studio.
-- `src/main.ts` initializes `@vifu/sdk` so the game can talk to the Vifu host when embedded.
+- `manifest.json` identifies the game; Vifu resolves the Angular build command,
+  deploy output, runtime entry, and available platform capabilities.
+- `VifuModelService` uses `hub.ai.generateText(...)` for NPC dialogue and game
+  tools through Vifu's authenticated, host-managed runtime.
+- `@vifu/hub` is the game's unified platform interface for AI agents and tools,
+  game state, resources, worlds, runtime events, and approved capabilities.
 
 Validate and build with the Vifu CLI:
 
@@ -99,7 +105,8 @@ Deploy to Vifu:
 vifu deploy
 ```
 
-Outside a Vifu host, simple tool commands use a deterministic matcher so the core game remains easy to try locally. The deployed game should use Vifu AI through the SDK host bridge, not direct calls to local provider URLs.
+Outside a Vifu host, simple tool commands use a deterministic matcher so the
+core game remains easy to try locally.
 
 ### Sprite pack license / credits
 
