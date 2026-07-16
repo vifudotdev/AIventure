@@ -1,28 +1,22 @@
 import { Injectable, OnDestroy } from '@angular/core';
+import * as hub from '@vifu/hub';
 import { EventBus } from '../../game/core/EventBus';
 import { ModelBackend } from './model-backend.interface';
 
-type VifuWindow = Window & {
-  Vifu?: {
-    ready?: () => Promise<unknown>;
-    status?: () => VifuStatus;
-    ai?: {
-      chat?: (input: Record<string, unknown>) => Promise<any>;
-      generateText?: (input: Record<string, unknown>) => Promise<{
-        content?: string;
-        text?: string;
-        toolCalls?: Array<{ name?: string }>;
-      }>;
-    };
-  };
-};
+type HubStatus = { hostConnected?: boolean; transport?: string };
 
-type VifuStatus = { hostConnected?: boolean; transport?: string };
-
-type VifuToolDefinition = {
+type HubToolDefinition = {
   name: string;
   description?: string;
   parameters?: Record<string, unknown>;
+};
+
+type HubChatCompletion = {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
 };
 
 @Injectable({
@@ -55,36 +49,35 @@ export class VifuModelService implements ModelBackend, OnDestroy {
     this.pendingToolResults = [];
   }
 
-  private vifuAi() {
-    return (window as VifuWindow).Vifu?.ai ?? null;
+  private hubAi() {
+    return hub.ai;
   }
 
-  private vifuStatus(): VifuStatus {
-    return (window as VifuWindow).Vifu?.status?.() ?? { transport: 'none', hostConnected: false };
+  private hubStatus(): HubStatus {
+    return hub.status();
   }
 
-  private isHostedVifuRuntime(status: VifuStatus): boolean {
+  private isHostedHubRuntime(status: HubStatus): boolean {
     return Boolean(status.hostConnected || (status.transport && status.transport !== 'none'));
   }
 
-  private async waitForVifuHost(): Promise<VifuStatus> {
-    const vifu = (window as VifuWindow).Vifu;
-    const initialStatus = this.vifuStatus();
-    if (!vifu?.ready || initialStatus.hostConnected || initialStatus.transport === 'none') return initialStatus;
+  private async waitForHub(): Promise<HubStatus> {
+    const initialStatus = this.hubStatus();
+    if (initialStatus.hostConnected || initialStatus.transport === 'none') return initialStatus;
     this.hostReadyAttempt ??= Promise.race([
-      vifu.ready().then(() => undefined),
+      hub.ready().then(() => undefined),
       new Promise<void>((resolve) => setTimeout(resolve, 5000)),
     ]).catch(() => undefined);
     await this.hostReadyAttempt;
-    return this.vifuStatus();
+    return this.hubStatus();
   }
 
-  private parseTools(tool_list: string): VifuToolDefinition[] {
+  private parseTools(tool_list: string): HubToolDefinition[] {
     if (!tool_list) return [];
     try {
       const parsed = JSON.parse(tool_list);
       if (!Array.isArray(parsed)) return [];
-      return parsed.flatMap((entry): VifuToolDefinition[] => {
+      return parsed.flatMap((entry): HubToolDefinition[] => {
         const source = entry?.type === 'function' && entry?.function ? entry.function : entry;
         const name = typeof source?.name === 'string' ? source.name.trim() : '';
         if (!name) return [];
@@ -135,14 +128,14 @@ export class VifuModelService implements ModelBackend, OnDestroy {
     return 'Vifu AI is unavailable right now. Please try again.';
   }
 
-  private shouldUseDeterministicFallback(status: VifuStatus, error?: unknown): boolean {
-    if (!this.isHostedVifuRuntime(status)) return true;
+  private shouldUseDeterministicFallback(status: HubStatus, error?: unknown): boolean {
+    if (!this.isHostedHubRuntime(status)) return true;
     if (!status.hostConnected) return true;
     const detail = error instanceof Error ? error.message : '';
     return /auth|token|sign|unavailable|not available|timed out|host transport/i.test(detail);
   }
 
-  private constructVifuTools(tool_list: string) {
+  private constructHubTools(tool_list: string) {
     const functionObjs = this.parseTools(tool_list);
     if (functionObjs.length === 0) return undefined;
 
@@ -151,7 +144,7 @@ export class VifuModelService implements ModelBackend, OnDestroy {
       tools[obj.name] = {
         description: obj.description,
         parameters: obj.parameters,
-        execute: (args: Record<string, unknown>) => this.executeVifuTool(obj.name, args)
+        execute: (args: Record<string, unknown>) => this.executeHubTool(obj.name, args)
       };
     }
     return Object.keys(tools).length > 0 ? tools : undefined;
@@ -169,7 +162,7 @@ export class VifuModelService implements ModelBackend, OnDestroy {
     ];
   }
 
-  private executeVifuTool(name: string, args: Record<string, unknown>) {
+  private executeHubTool(name: string, args: Record<string, unknown>) {
     return new Promise((resolve) => {
       let pendingEntry: { resolve: (result: any) => void; timeout: ReturnType<typeof setTimeout> } | null = null;
       const timeout = setTimeout(() => {
@@ -239,8 +232,8 @@ export class VifuModelService implements ModelBackend, OnDestroy {
   }
 
   async *generateTextStream(tool_list: string, context: string, prompt: string): AsyncGenerator<string> {
-    const status = await this.waitForVifuHost();
-    const generateText = this.vifuAi()?.generateText;
+    const status = await this.waitForHub();
+    const generateText = this.hubAi().generateText;
     if (!generateText) {
       const deterministic = this.shouldUseDeterministicFallback(status)
         ? this.deterministicToolCall(tool_list, context, prompt)
@@ -256,10 +249,10 @@ export class VifuModelService implements ModelBackend, OnDestroy {
       const result = await generateText({
         model: 'basic',
         messages: this.messagesForTurn(tool_list),
-        tools: this.constructVifuTools(tool_list),
+        tools: this.constructHubTools(tool_list),
         maxSteps: 3
       });
-      const content = result.content || result.text || '';
+      const content = result.content || '';
       if (content) {
         this.history.push({ role: 'assistant', content });
         yield content;
@@ -283,8 +276,8 @@ export class VifuModelService implements ModelBackend, OnDestroy {
   }
 
   async *generateHtmlStream(prompt: string, previousHtml: string = ""): AsyncGenerator<string> {
-    const status = await this.waitForVifuHost();
-    const chat = this.vifuAi()?.chat;
+    const status = await this.waitForHub();
+    const chat = this.hubAi().chat;
     if (!chat) {
       yield previousHtml || '<html><body><p>Vifu AI is unavailable right now.</p></body></html>';
       return;
@@ -297,7 +290,7 @@ export class VifuModelService implements ModelBackend, OnDestroy {
     }
 
     try {
-      const response = await chat({
+      const response = await chat<HubChatCompletion>({
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: prompt }
