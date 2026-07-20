@@ -123,9 +123,9 @@ export class VifuModelService implements ModelBackend, OnDestroy {
   private hostedAiUnavailableMessage(error?: unknown): string {
     const detail = error instanceof Error ? error.message : '';
     if (/auth|token|sign/i.test(detail)) {
-      return 'Vifu AI needs a signed-in Vifu session for this game.';
+      return 'A signed-in game session is required for hosted AI.';
     }
-    return 'Vifu AI is unavailable right now. Please try again.';
+    return 'Hosted AI is unavailable right now. Please try again.';
   }
 
   private shouldUseDeterministicFallback(status: HubStatus, error?: unknown): boolean {
@@ -279,7 +279,7 @@ export class VifuModelService implements ModelBackend, OnDestroy {
     const status = await this.waitForHub();
     const chat = this.hubAi().chat;
     if (!chat) {
-      yield previousHtml || '<html><body><p>Vifu AI is unavailable right now.</p></body></html>';
+      yield previousHtml || '<html><body><p>Hosted AI is unavailable right now.</p></body></html>';
       return;
     }
 
@@ -304,6 +304,6 @@ export class VifuModelService implements ModelBackend, OnDestroy {
     } catch {
     }
 
-    yield previousHtml || '<html><body><p>Vifu AI is unavailable right now.</p></body></html>';
+    yield previousHtml || '<html><body><p>Hosted AI is unavailable right now.</p></body></html>';
   }
 }

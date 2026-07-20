@@ -73,7 +73,7 @@ export class HomeComponent implements OnInit
 
     ngOnInit() {
         // Some optional local model providers expose loading hooks. Avoid static imports
-        // so unused providers with remote-code paths can be tree-shaken from Vifu builds.
+        // so unused providers with remote-code paths can be tree-shaken from hosted builds.
         if (isLoadingModelBackend(this.modelBackend)) {
             this.isLoadingModel = true;
             this.modelBackend.loadingProgress$.subscribe(p => this.loadingProgress = p);

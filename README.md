@@ -18,7 +18,7 @@ AIventure is a top-down exploration game where players navigate a grid-based wor
 *   **Zelda-Style Camera:** Camera transitions between screen-sized rooms.
 *   **Interactive Objects:** Support for blockers, chat interactions, and external links.
 *   **Smart NPCs:** Autonomous characters that can patrol, follow the player, or execute AI-driven commands.
-*   **Vifu AI Integration:** Uses `@vifu/hub` and the hosted Vifu AI service for NPC dialogue and tool-driven game actions after deployment.
+*   **Runtime AI:** Hosted AI supports NPC dialogue and tool-driven game actions.
 
 ## UI in Angular
 
@@ -62,7 +62,7 @@ The UI is divided into 3 major sections:
 npm install
 ```
 
-`src/app/app.config.ts` wires `MODEL_BACKEND` to `VifuModelService` by default. No local LLM server or browser API key is required for the deployed Vifu path.
+`src/app/app.config.ts` wires `MODEL_BACKEND` to the hosted model service by default.
 
 ### Run Development Server
 
@@ -80,33 +80,26 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 npm run build
 ```
 
-## Run On Vifu
+## Hosted Build
 
-The Vifu integration makes AIventure a Vifu-native published game while keeping
-its Angular + Phaser structure intact:
+The game keeps its Angular + Phaser structure for local development and hosted
+play. `manifest.json` identifies its build output and runtime entry.
 
-- `manifest.json` identifies the game; Vifu resolves the Angular build command,
-  deploy output, runtime entry, and available platform capabilities.
-- `VifuModelService` uses `hub.ai.generateText(...)` for NPC dialogue and game
-  tools through Vifu's authenticated, host-managed runtime.
-- `@vifu/hub` is the game's unified platform interface for AI agents and tools,
-  game state, resources, worlds, runtime events, and approved capabilities.
-
-Validate and build with the Vifu CLI:
+Validate and build with the CLI:
 
 ```bash
-vifu manifest check
-vifu build
+vf manifest check
+vf build
 ```
 
-Deploy to Vifu:
+Deploy:
 
 ```bash
-vifu deploy
+vf deploy
 ```
 
-Outside a Vifu host, simple tool commands use a deterministic matcher so the
-core game remains easy to try locally.
+For local development, simple tool commands use a deterministic matcher so the
+core game remains easy to try.
 
 ### Sprite pack license / credits
 
